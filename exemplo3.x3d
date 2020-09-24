@@ -26,5 +26,13 @@
                 </Appearance>
             </Shape>
         </Transform>
+                <Transform>
+            <Shape>
+                <TriangleSet2D vertices='10 -3 -5 10 13 40'/>
+                <Appearance>
+                    <Material diffuseColor='0 1 0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
     </Scene>
 </X3D>
