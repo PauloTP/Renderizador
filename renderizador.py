@@ -215,11 +215,9 @@ def triangleSet2D(vertices, color):
     lowest = 0
     high_id = 0
 
-    print("debug:",vertices)
 
     for i in range(3):
         y = vertices[(i*2) + 1]
-        print("debug_y:",y)
         if(y < highest):
             highest = y
             high_id = i
@@ -229,8 +227,8 @@ def triangleSet2D(vertices, color):
 
     pixel = [math.floor(vertices[high_id*2]), math.floor(vertices[high_id*2 + 1])]
     lowest = math.floor(lowest)
-    print("pixel mais alto: " ,pixel)
-    print("y mais baixo: " , lowest)
+    #print("pixel mais alto: " ,pixel)
+    #print("y mais baixo: " , lowest)
 
     #start loop:
     origin = pixel[0]
@@ -334,8 +332,8 @@ def triangleSet2D(vertices, color):
 
         #end of state machine
 
-    print ("Done")
-    print (f"Rendered {render_count} pixels")
+    #print ("Done")
+    #print (f"Rendered {render_count} pixels")
 
 
     #acima disso eh a parte 1
@@ -618,12 +616,25 @@ def triangleStripSet(point, stripCount, color):
     # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
     # em uma lista chamada stripCount (perceba que é uma lista).
 
-    #triangleSet(point, color)
+    pos = 0
+    new_points = []
+
+    #this while look at 1 triangle into the future, thus the -3
+    while(pos <= (stripCount[0]-3)):
+
+        for i in range(3):
+            new_points.append(point[(pos+i)*3])
+            new_points.append(point[((pos+i)*3)+1])
+            new_points.append(point[((pos+i)*3)+2])
+        
+        pos += 1
+
+    triangleSet(new_points, color)
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("TriangleStripSet : pontos = {0} ".format(point), end = '') # imprime no terminal pontos
-    for i, strip in enumerate(stripCount):
-        print("strip[{0}] = {1} ".format(i, strip), end = '') # imprime no terminal
-    print("")
+    #print("TriangleStripSet : pontos = {0} ".format(point), end = '') # imprime no terminal pontos
+    #for i, strip in enumerate(stripCount):
+    #    print("strip[{0}] = {1} ".format(i, strip), end = '') # imprime no terminal
+    #print("")
 
 def indexedTriangleStripSet(point, index, color):
     """ Função usada para renderizar IndexedTriangleStripSet. """
@@ -639,17 +650,10 @@ def indexedTriangleStripSet(point, index, color):
     # depois 2, 3 e 4, e assim por diante.
     
     
-    print("-------------------indexedTriangleStripSet-----------------------------\n")
     pos = 0
     new_points = []
-    print(point[36])
 
     while(index[pos+2] != -1):
-        print("")
-        print(pos)
-        print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
-        print("tranformed : pontos = {0}".format(new_points)) # imprime no terminal pontos
-        print("")
 
         for i in range(3):
             new_points.append(point[(int(index[pos+i])*3)])
@@ -662,11 +666,11 @@ def indexedTriangleStripSet(point, index, color):
     
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("quantidade de triangulos:",len(new_points)/9)
-    print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
-    print("tranformed : pontos = {0}".format(new_points)) # imprime no terminal pontos
+    #print("quantidade de triangulos:",len(new_points)/9)
+    #print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
+    #print("tranformed : pontos = {0}".format(new_points)) # imprime no terminal pontos
     triangleSet(new_points, color)
-    print("-------------------indexedTriangleStripSet-----------------------------\n")
+    #print("-------------------indexedTriangleStripSet-----------------------------\n")
 
 def box(size, color):
     """ Função usada para renderizar Boxes. """
@@ -713,8 +717,8 @@ def box(size, color):
     #print("Box : size = {0}".format(size)) # imprime no terminal pontos
 
 
-LARGURA = 30
-ALTURA = 20
+LARGURA = 100
+ALTURA = 50
 
 if __name__ == '__main__':
 
