@@ -629,7 +629,7 @@ def indexedTriangleStripSet(point, index, color):
     """ Função usada para renderizar IndexedTriangleStripSet. """
     # A função indexedTriangleStripSet é usada para desenhar tiras de triângulos
     # interconectados, você receberá as coordenadas dos pontos no parâmetro point, esses
-    # po-ntos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
+    # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
     # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
     # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
     # segundo ponto e assim por diante. No IndexedTriangleStripSet uma lista informando
@@ -644,7 +644,7 @@ def indexedTriangleStripSet(point, index, color):
     new_points = []
     print(point[36])
 
-    while(index[pos] != -1):
+    while(index[pos+2] != -1):
         print("")
         print(pos)
         print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
@@ -652,9 +652,9 @@ def indexedTriangleStripSet(point, index, color):
         print("")
 
         for i in range(3):
-            new_points.append(point[i+(int(index[pos])*3)])
-            new_points.append(point[i+(int(index[pos])*3)+1])
-            new_points.append(point[i+(int(index[pos])*3)+2])
+            new_points.append(point[(int(index[pos+i])*3)])
+            new_points.append(point[(int(index[pos+i])*3)+1])
+            new_points.append(point[(int(index[pos+i])*3)+2])
         
         pos += 1
 
