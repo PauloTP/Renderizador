@@ -42,10 +42,6 @@ class X3D:
     """
 
     current_color = [1.0, 1.0, 1.0] # controle de cor instantânea
-<<<<<<< HEAD
-=======
-    current_texture = [] # controle de texturas instantâneas
->>>>>>> upstream/master
     preview = None # atributo que aponta para o sistema de preview
     render = {} # dicionario dos métodos de renderização
 
@@ -216,12 +212,9 @@ class Shape(X3DShapeNode):
                 self.geometry = IndexedTriangleStripSet(child)
             elif child.tag == "Box":
                 self.geometry = Box(child)
-<<<<<<< HEAD
-=======
             elif child.tag == "IndexedFaceSet":
                 self.geometry = IndexedFaceSet(child)
 
->>>>>>> upstream/master
 
 # Rendering component
 
@@ -232,22 +225,6 @@ class X3DGeometryNode(X3DNode):
 class X3DComposedGeometryNode(X3DGeometryNode):
     def __init__(self):
         super().__init__() # Chama construtor da classe pai
-<<<<<<< HEAD
-
-class X3DGeometricPropertyNode(X3DNode):
-    def __init__(self):
-        super().__init__() # Chama construtor da classe pai
-
-class X3DCoordinateNode(X3DGeometricPropertyNode):
-    def __init__(self):
-        super().__init__() # Chama construtor da classe pai
-
-class Coordinate(X3DCoordinateNode):
-    def __init__(self, node):
-        super().__init__() # Chama construtor da classe pai
-        point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
-        self.point = [ float(p) for p in point_str]
-=======
 
 class X3DGeometricPropertyNode(X3DNode):
     def __init__(self):
@@ -272,7 +249,6 @@ class Color(X3DColorNode):
         super().__init__() # Chama construtor da classe pai
         color_str = re.split(r'[,\s]\s*',node.attrib['color'].strip())
         self.color = [ float(p) for p in color_str]
->>>>>>> upstream/master
 
 # Geometry2D component
 
@@ -351,11 +327,7 @@ class TriangleStripSet(X3DComposedGeometryNode):
         self.stripCount = []
 
         stripCount_str = re.split(r'[,\s]\s*',node.attrib['stripCount'].strip())
-<<<<<<< HEAD
-        self.stripCount = [ float(point) for point in stripCount_str]
-=======
         self.stripCount = [ int(point) for point in stripCount_str]
->>>>>>> upstream/master
 
         for child in node:
             clean(child) # remove namespace
@@ -377,11 +349,7 @@ class IndexedTriangleStripSet(X3DComposedGeometryNode):
         self.index = []
 
         index_str = re.split(r'[,\s]\s*',node.attrib['index'].strip())
-<<<<<<< HEAD
-        self.index = [ float(point) for point in index_str]
-=======
         self.index = [ int(point) for point in index_str]
->>>>>>> upstream/master
 
         for child in node:
             clean(child) # remove namespace
@@ -441,8 +409,6 @@ class Box(X3DGeometryNode):
         # Render
         if "Box" in X3D.render:
             X3D.render["Box"](size=self.size, color=X3D.current_color)
-<<<<<<< HEAD
-=======
 
 class IndexedFaceSet(X3DComposedGeometryNode):
     """ Classe responsável por geometria Indexed Face Set, que é uma malha de polígonos. """
@@ -522,4 +488,3 @@ class TextureCoordinate(X3DTextureCoordinateNode):
         self.point = [ float(p) for p in point_str]
 
 
->>>>>>> upstream/master
