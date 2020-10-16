@@ -141,7 +141,35 @@ def check_point(vertices, point):
 
     return (anglesum < (360 + THRESHOLD) and anglesum > (360 - THRESHOLD))
 
-def draw_pixel(vertices, color, pixel):
+
+def get_barycentric(triangle, coord):
+
+    t_matrix = np.matrix([  [triangle[0], triangle[2] , triangle[4]],
+                            [triangle[1], triangle[3] , triangle[5]],
+                            [1, 1, 1,] ])
+    
+    #print(f"matrix do coiso:{t_matrix}")
+    #print(f"matrix do coiso coisada:{np.linalg.inv(t_matrix)}")
+    #print(f"matrix das duas coisa coisadas:{np.matmul(t_matrix, np.linalg.inv(t_matrix))}")
+
+    c_matrix = np.matrix([  [coord[0]],
+                            [coord[1]],
+                            [1]])
+    
+    bary_matrix = np.matmul( np.linalg.inv(t_matrix), c_matrix)
+
+    #print(bary_matrix)
+
+    bary = [ round(bary_matrix.tolist()[0][0], 3), round(bary_matrix.tolist()[1][0],3), round(bary_matrix.tolist()[2][0],3)]
+
+    for i in range(len(bary)):
+        if bary[i] < 0:
+            bary[i] = 0
+
+    return bary
+
+
+def draw_pixel(vertices, pixel, color = None, vertex_color = None):
 
     if (pixel[0] >= LARGURA) or (pixel[1] >= ALTURA) or (pixel[0] < 0) or (pixel[1] < 0):
         return "OUT OF BOUNDS" #flag for not trying to render anything outside the camera
@@ -163,14 +191,29 @@ def draw_pixel(vertices, color, pixel):
     for i in SSP:
         if check_point(vertices,i):
             intensity += 1 / len(SSP)
-    
-    bitcolor = []
-    for i in color:
-        bitcolor.append(int((i) * 255))
 
     if(intensity == 0):
         return False
     
+    if(vertex_color):
+        #print(f"vertices do bary {vertices}")
+        bary = get_barycentric(vertices, pixel)
+        #print(f"bary nasceu")
+
+        r = (((vertex_color[0][0]*255)**2) * bary[0]**2 + ((vertex_color[1][0]*255)**2) * bary[1]**2 + ((vertex_color[2][0]*255)**2) * bary[2]**2) ** 0.5
+        g = (((vertex_color[0][1]*255)**2) * bary[0]**2 + ((vertex_color[1][1]*255)**2) * bary[1]**2 + ((vertex_color[2][1]*255)**2) * bary[2]**2) ** 0.5
+        b = (((vertex_color[0][2]*255)**2) * bary[0]**2 + ((vertex_color[1][2]*255)**2) * bary[1]**2 + ((vertex_color[2][2]*255)**2) * bary[2]**2) ** 0.5
+
+        bitcolor = [r,g,b]
+        #print(f"Color {color}")
+    else:
+        bitcolor = []
+        for i in color:
+            bitcolor.append(int((i) * 255))
+
+
+
+
     #if triangle is above another rendered object
     old_color = gpu.GPU.get_pixel(pixel[0],pixel[1])
 
@@ -187,23 +230,24 @@ def draw_pixel(vertices, color, pixel):
     #unfortunally the class GPU does not support an alpha channel Dx
 
     gpu.GPU.set_pixel(pixel[0], pixel[1], r, g, b)
-
+    #gpu.GPU.set_pixel(pixel[0], pixel[1], 255, 0, 0)
+    #gpu.GPU.set_pixel(pixel[0], pixel[1], bitcolor[0], bitcolor[1], bitcolor[2])
     return True
 
-
-def triangleSet2D(vertices, color):
+def triangleSet2D(vertices, color = None, vertex_color = None):
     """ Função usada para renderizar TriangleSet2D. """
     #gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
-    print(vertices)
+    #print(f"vertices2D: {vertices} ")
     #print(check_point(vertices,[10,10]))
 
     #check every pixel
     '''
-    for i in range(30):
-        for j in range(20):
-            draw_pixel(vertices,color,[i,j])
+    for i in range(LARGURA):
+        for j in range(ALTURA):
+            draw_pixel(vertices,[i,j], color)
+    
+    return
     '''
-
     #pseudo zig-zag
     #start on highest vertice
     #go right until end of triangle
@@ -246,7 +290,7 @@ def triangleSet2D(vertices, color):
     Out_of_bounds = False
     while line < lowest and (not Out_of_bounds):
         #THERE IS NO SWITCH CASE IN PYTHON!!! (sad music starts playing)
-        drew = draw_pixel(vertices,color,[origin + delta, line])
+        drew = draw_pixel(vertices, [origin + delta, line], color, vertex_color)
         if(drew == "OUT OF BOUNDS"):
             Out_of_bounds = True
             render_count += 1
@@ -257,7 +301,7 @@ def triangleSet2D(vertices, color):
             while line <= lowest and line <= ALTURA:
                 for i in range(LARGURA):
                     render_count += 1
-                    draw_pixel(vertices,color,[i, line])
+                    draw_pixel(vertices,[i, line], color)
                 line += 1
             #End of nojeira de ultimo caso
 
@@ -525,7 +569,7 @@ class Procedure():
 procedure = Procedure()
 
 
-def triangleSet(point, color):
+def triangleSet(point, color, vertex_color=None, texture=None):
     """ Função usada para renderizar TriangleSet. """
     # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
     # de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x do
@@ -536,6 +580,7 @@ def triangleSet(point, color):
     # primeiros pontos definem um triângulo, os três próximos pontos definem um novo
     # triângulo, e assim por diante.
 
+    #print(f"point do Tset = {point}")
     #applying the procedure to convert the points to the camera local space, and also applying FOV
     point_list = []
     for i in range(0, len(point), 3):
@@ -549,12 +594,20 @@ def triangleSet(point, color):
     for i in range(0, len(point_list)):
         vertices.append(point_list[i][0])
         vertices.append(point_list[i][1])
-
+    
     #print("TriangleSet : uv = {0}".format(vertices)) # imprime no terminal pontos
-    for i in range(0, len(vertices), 6):
-        #render each triangle
-        triangleSet2D(vertices[i:i+6],color)
 
+    if(texture):
+        print("pera ai q se ta apressado")
+
+    elif(vertex_color):
+        for i in range(0, len(vertices), 6):
+            #render each triangle
+            triangleSet2D(vertices[i:i+6],color,vertex_color[int(i/2):int(i/2) +3])
+    else:
+        for i in range(0, len(vertices), 6):
+            #render each triangle
+            triangleSet2D(vertices[i:i+6],color)
 
 def viewpoint(position, orientation, fieldOfView):
     """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
@@ -732,8 +785,8 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
     # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
     # depois 2, 3 e 4, e assim por diante.
-    # Adicionalmente essa implementação do IndexedFace suport cores por vértices, assim
-    # a se a flag colorPerVertex estiver habilidades, os vértices também possuirão cores
+    # Adicionalmente essa implementação do IndexedFace suporta cores por vértices, assim
+    # se a flag colorPerVertex estiver habilitada, os vértices também possuirão cores
     # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
     # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
     # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
@@ -748,33 +801,44 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     coord[coordIndex[pos+1]]
     coord[coordIndex[pos+2]]
 
+    
 
-    if(not(colorPerVertex) or True):
 
-        while(pos != len(coordIndex)):
-            while(coordIndex[pos] != -1):
+    vertex_colors = []
+    while(pos != len(coordIndex)):
+        while(coordIndex[pos] != -1):
 
-                
-                """
-                lembrete porque o *3 existe:
-                as coords tem x,y,z assim tem as cordenadas relacionadas ao index A
-                são A*3 EX: se queremos coordIndex = 2 as codenadas vão estar no coord 6 7 e 8
-                """
-                new_points.append(coord[(coordIndex[pos]*3)])
-                new_points.append(coord[(coordIndex[pos]*3)+1])
-                new_points.append(coord[(coordIndex[pos]*3)+2])
-                
-                pos += 1
             
-            #isso é basicamente um if coordIndex == -1
-            #mas assim tambem funciona se nem todo triangulo acabar em -1
+            """
+            lembrete porque o *3 existe:
+            as coords tem x,y,z assim tem as cordenadas relacionadas ao index A
+            são A*3 EX: se queremos coordIndex = 2 as codenadas vão estar no coord 6 7 e 8
+            """
+            new_points.append(coord[(coordIndex[pos]*3)])
+            new_points.append(coord[(coordIndex[pos]*3)+1])
+            new_points.append(coord[(coordIndex[pos]*3)+2])
+
+            #print(f"pos = {pos}")
+            #print(f"coord = {new_points}")
+            if(colorPerVertex):
+                vertex_colors.append( color[colorIndex[pos]*3:colorIndex[pos]*3 + 3])
             pos += 1
-            triangleSet(new_points, [0,255,0])
-            new_points.clear()
+
+        
+        #print(f"vertex color sliced = {vertex_colors}")
+        #isso é basicamente um if coordIndex == -1
+        #mas assim tambem funciona se nem todo triangulo acabar em -1
+        pos += 1
         
 
         #new_points =[-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0]
-        #triangleSet(new_points, [0,255,0])
+        #new_points = [-0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5]
+        #print(f"New poiunts are: {new_points}")
+        #triangleSet(new_points, [0,1,0],vertex_color=[[1,0,0],[0,1,0],[0,0,1]])
+        if(colorPerVertex):
+            triangleSet(new_points, [0,1,0], vertex_colors)
+        else:
+            triangleSet(new_points, [0,1,0])
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("IndexedFaceSet : ")
