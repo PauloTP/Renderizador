@@ -42,6 +42,7 @@ class X3D:
     """
 
     current_color = [1.0, 1.0, 1.0] # controle de cor instantânea
+    current_texture = [] # controle de texturas instantâneas
     preview = None # atributo que aponta para o sistema de preview
     render = {} # dicionario dos métodos de renderização
 

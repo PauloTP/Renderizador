@@ -11,7 +11,6 @@ from PIL import Image
 class GPU:
     """
     Classe que representa o funcionamento de uma GPU.
-<<<<<<< HEAD
 
     ...
 
@@ -32,28 +31,6 @@ class GPU:
         Realiza o parse e já realiza as rotinas de renderização.
     """
 
-=======
-
-    ...
-
-    Atributos
-    ----------
-    width : int (static)
-        largura tela
-    height : int (static)
-        altura tela
-    image_file : str (static)
-        nome do arquivo a ser salvo 
-    framebuffer : numpy.ndarray (static)
-        matriz que armazena pixels no formato RGB
-    
-    Métodos
-    -------
-    parse():
-        Realiza o parse e já realiza as rotinas de renderização.
-    """
-
->>>>>>> upstream/master
     def __init__(self, width, height, image_file):
         """ Criar um framebuffer e define o nome do arquivo para salvar o framebuffer. """
         # Mantem largura e altura
@@ -74,16 +51,13 @@ class GPU:
         img = Image.fromarray(GPU._frame_buffer, 'RGB')
         img.save(GPU.image_file)
 
-<<<<<<< HEAD
         
     def get_pixel(u, v):
         return GPU._frame_buffer[v][u]# retorna a cor do pixel desejada
         # fizemos essa funcao a mais aqui apra tratar um caso
 
-=======
     def load_texture(textura):
         "Método para ler textura."
         imagem = Image.open(textura)
         matriz = np.array(imagem)
         return matriz
->>>>>>> upstream/master
