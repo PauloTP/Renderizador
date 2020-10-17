@@ -168,8 +168,41 @@ def get_barycentric(triangle, coord):
 
     return bary
 
+def get_tex_color(vertice, texture, text_coord, pixel):
+    #get lowst left pixel
+    lowest = [math.inf, math.inf] #se tive de ponta cabeca, coloca um - aqui
+    for i in range(0,len(vertice),2):
+        if (vertice[i] < lowest[0]):
+            lowest[0] = vertice[i]
+        if (vertice[i + 1] < lowest[1]):
+            lowest[1] = vertice[i + 1]
 
-def draw_pixel(vertices, pixel, color = None, vertex_color = None):
+    #reduce every point by lowest to bring it to origin, then normalize
+    highest = [-math.inf, -math.inf]
+    for i in range(0,len(vertice),2):
+        if (vertice[i] > highest[0]):
+            highest[0] = vertice[i]
+        if (vertice[i + 1] > highest[1]):
+            highest[1] = vertice[i + 1]
+    
+    highest[0] -= lowest[0]
+    highest[1] -= lowest[1]
+    #print(vertice)
+    #print(highest)
+
+    target = [pixel[0] - lowest[0], pixel[1] - lowest[1]]
+    target = [target[0] / highest[0], target[1] / highest[1]]
+
+    tex_height = len(texture)
+    tex_width = len(texture[0])
+
+    the_chosen_one = [int(target[0] * tex_width), int(target[1] * tex_height)] #angelical choirs start singing on the background
+
+    the_chosen_color = texture[the_chosen_one[1]][the_chosen_one[0]] #angelical choirs makes some chromatic noises
+
+    return the_chosen_color[0:3]
+
+def draw_pixel(vertices, pixel, color = None, vertex_color = None, texture=None, tex_coord = None):
 
     if (pixel[0] >= LARGURA) or (pixel[1] >= ALTURA) or (pixel[0] < 0) or (pixel[1] < 0):
         return "OUT OF BOUNDS" #flag for not trying to render anything outside the camera
@@ -195,24 +228,24 @@ def draw_pixel(vertices, pixel, color = None, vertex_color = None):
     if(intensity == 0):
         return False
     
-    if(vertex_color):
-        #print(f"vertices do bary {vertices}")
-        bary = get_barycentric(vertices, pixel)
-        #print(f"bary nasceu")
+    if((texture is None)):
+        if(vertex_color):
+            #print(f"vertices do bary {vertices}")
+            bary = get_barycentric(vertices, pixel)
+            #print(f"bary nasceu")
 
-        r = (((vertex_color[0][0]*255)**2) * bary[0]**2 + ((vertex_color[1][0]*255)**2) * bary[1]**2 + ((vertex_color[2][0]*255)**2) * bary[2]**2) ** 0.5
-        g = (((vertex_color[0][1]*255)**2) * bary[0]**2 + ((vertex_color[1][1]*255)**2) * bary[1]**2 + ((vertex_color[2][1]*255)**2) * bary[2]**2) ** 0.5
-        b = (((vertex_color[0][2]*255)**2) * bary[0]**2 + ((vertex_color[1][2]*255)**2) * bary[1]**2 + ((vertex_color[2][2]*255)**2) * bary[2]**2) ** 0.5
+            r = (((vertex_color[0][0]*255)**2) * bary[0]**2 + ((vertex_color[1][0]*255)**2) * bary[1]**2 + ((vertex_color[2][0]*255)**2) * bary[2]**2) ** 0.5
+            g = (((vertex_color[0][1]*255)**2) * bary[0]**2 + ((vertex_color[1][1]*255)**2) * bary[1]**2 + ((vertex_color[2][1]*255)**2) * bary[2]**2) ** 0.5
+            b = (((vertex_color[0][2]*255)**2) * bary[0]**2 + ((vertex_color[1][2]*255)**2) * bary[1]**2 + ((vertex_color[2][2]*255)**2) * bary[2]**2) ** 0.5
 
-        bitcolor = [r,g,b]
-        #print(f"Color {color}")
+            bitcolor = [r,g,b]
+            #print(f"Color {color}")
+        else:
+            bitcolor = []
+            for i in color:
+                bitcolor.append(int((i) * 255))
     else:
-        bitcolor = []
-        for i in color:
-            bitcolor.append(int((i) * 255))
-
-
-
+        bitcolor = get_tex_color(vertices, texture, tex_coord, pixel)
 
     #if triangle is above another rendered object
     old_color = gpu.GPU.get_pixel(pixel[0],pixel[1])
@@ -234,7 +267,7 @@ def draw_pixel(vertices, pixel, color = None, vertex_color = None):
     #gpu.GPU.set_pixel(pixel[0], pixel[1], bitcolor[0], bitcolor[1], bitcolor[2])
     return True
 
-def triangleSet2D(vertices, color = None, vertex_color = None):
+def triangleSet2D(vertices, color = None, vertex_color = None, texture=None, tex_coord = None):
     """ Função usada para renderizar TriangleSet2D. """
     #gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
     #print(f"vertices2D: {vertices} ")
@@ -290,7 +323,7 @@ def triangleSet2D(vertices, color = None, vertex_color = None):
     Out_of_bounds = False
     while line < lowest and (not Out_of_bounds):
         #THERE IS NO SWITCH CASE IN PYTHON!!! (sad music starts playing)
-        drew = draw_pixel(vertices, [origin + delta, line], color, vertex_color)
+        drew = draw_pixel(vertices, [origin + delta, line], color, vertex_color, texture, tex_coord)
         if(drew == "OUT OF BOUNDS"):
             Out_of_bounds = True
             render_count += 1
@@ -569,7 +602,7 @@ class Procedure():
 procedure = Procedure()
 
 
-def triangleSet(point, color, vertex_color=None, texture=None):
+def triangleSet(point, color, vertex_color=None, texture=None, tex_coord = None):
     """ Função usada para renderizar TriangleSet. """
     # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
     # de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x do
@@ -596,18 +629,25 @@ def triangleSet(point, color, vertex_color=None, texture=None):
         vertices.append(point_list[i][1])
     
     #print("TriangleSet : uv = {0}".format(vertices)) # imprime no terminal pontos
+    #print(type(type(type(texture)))) #dont ask, business
+    
+    if((texture is None)):
+        if(vertex_color):
+            for i in range(0, len(vertices), 6):
+                #render each triangle
+                triangleSet2D(vertices[i:i+6],color,vertex_color[int(i/2):int(i/2) +3])
+        else:
+            for i in range(0, len(vertices), 6):
+                #render each triangle
+                triangleSet2D(vertices[i:i+6],color)
+        return
 
-    if(texture):
-        print("pera ai q se ta apressado")
+    for i in range(0, len(vertices), 6):
+        #render each triangle
+        triangleSet2D(vertices[i:i+6],color, texture=texture, tex_coord=tex_coord)
 
-    elif(vertex_color):
-        for i in range(0, len(vertices), 6):
-            #render each triangle
-            triangleSet2D(vertices[i:i+6],color,vertex_color[int(i/2):int(i/2) +3])
-    else:
-        for i in range(0, len(vertices), 6):
-            #render each triangle
-            triangleSet2D(vertices[i:i+6],color)
+
+ 
 
 def viewpoint(position, orientation, fieldOfView):
     """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
@@ -795,16 +835,13 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
 
     pos = 0
     new_points = []
-
-    #sys.exit()
-    coord[coordIndex[pos]]
-    coord[coordIndex[pos+1]]
-    coord[coordIndex[pos+2]]
-
-    
-
-
     vertex_colors = []
+    tex_coord = []
+
+    image = None
+    if(texCoordIndex):
+        image = gpu.GPU.load_texture(current_texture[0])
+
     while(pos != len(coordIndex)):
         while(coordIndex[pos] != -1):
 
@@ -824,23 +861,27 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
                 vertex_colors.append( color[colorIndex[pos]*3:colorIndex[pos]*3 + 3])
             pos += 1
 
+            if(texCoordIndex):
+                tex_coord.append(texCoord[(texCoordIndex[pos]*2)])
+                tex_coord.append(texCoord[(texCoordIndex[pos]*2)+1])
+        
         
         #print(f"vertex color sliced = {vertex_colors}")
         #isso é basicamente um if coordIndex == -1
         #mas assim tambem funciona se nem todo triangulo acabar em -1
         pos += 1
         
-
-        #new_points =[-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0]
-        #new_points = [-0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5]
-        #print(f"New poiunts are: {new_points}")
-        #triangleSet(new_points, [0,1,0],vertex_color=[[1,0,0],[0,1,0],[0,0,1]])
-        if(colorPerVertex):
-            triangleSet(new_points, [0,1,0], vertex_colors)
-        else:
-            triangleSet(new_points, [0,1,0])
+    #new_points =[-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0]
+    #new_points = [-0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5]
+    #print(f"New poiunts are: {new_points}")
+    #triangleSet(new_points, [0,1,0],vertex_color=[[1,0,0],[0,1,0],[0,0,1]])
+    if(colorPerVertex):
+        triangleSet(new_points, [0,1,0], vertex_colors)
+    else:
+        triangleSet(new_points, [0,1,0], texture = image, tex_coord = tex_coord)
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
+    '''
     print("IndexedFaceSet : ")
     if coord:
         print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(new_points, coord)) # imprime no terminal
@@ -852,7 +893,8 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
         print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex)) # imprime no terminal
     if(current_texture):
         image = gpu.GPU.load_texture(current_texture[0])
-        print("\t Matriz com image = {0}".format(image))
+       # print("\t Matriz com image = {0}".format(image))
+    '''
 
 
 LARGURA = 100
@@ -866,7 +908,7 @@ if __name__ == '__main__':
     width = LARGURA
     height = ALTURA
     x3d_file = "exemplo8.x3d"
-    image_file = "docs/insper.png"
+    image_file = "docs/img.png"
 
     # Tratando entrada de parâmetro
     parser = argparse.ArgumentParser(add_help=False)   # parser para linha de comando
